@@ -1,17 +1,18 @@
 const mongoose   = require('mongoose');
 const { nanoid } = require('nanoid');
-const { slugify } = require('../../../libs/utils');
+const bcrypt   = require('bcrypt');
 
 module.exports = class SchoolManager { 
 
-    constructor({utils, validators, mongomodels}={}){
+    constructor({utils, validators, mongomodels, managers}={}){
         this.utils        = utils;
         this.validators   = validators; 
         this.mongomodels  = mongomodels;
-        this.httpExposed  = ['register'];
+        this.tokenManager = managers.token;
+        this.httpExposed  = ['register', 'login'];
     }
 
-    async register({name, country, city, address, password}){
+    async register({name, country, city, address, password}) {
         const data = {name, country, city, address, password};
 
         // Data validation
@@ -38,6 +39,25 @@ module.exports = class SchoolManager {
             session.endSession();
             return result
         }
+    }
+
+    async login({username, password}) {
+        const data = {username, password};
+
+        // Data validation
+        let input = await this.validators.school.login(data);
+        if(input) return {errors: input};
+
+        // Logic
+        const schoolAdmin = await this.mongomodels.SchoolAdmin.findOne({username}).select('-__v -updatedAt').lean();
+        if (!schoolAdmin) return {error: 'Incorrect email or password'};
+        
+        const isMatched = await bcrypt.compare(password, schoolAdmin.password);
+        if (!isMatched) return {error: 'Incorrect email or password'};
+
+        const token = this.tokenManager.genLongToken({userId: schoolAdmin._id, userKey: schoolAdmin.username})
+        const {password: _, ...result} = schoolAdmin
+        return {token, ...result}
     }
 
 }

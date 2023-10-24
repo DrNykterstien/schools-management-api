@@ -4,31 +4,45 @@ module.exports = {
             label: 'School Name',
             path: 'name',
             model: 'name',
-            required: true,
+            required: true
         },
         {
             label: 'Country',
             path: 'country',
             model: 'country',
-            required: true,
+            required: true
         },
         {
             label: 'City',
             path: 'city',
             model: 'text',
-            required: true,
+            required: true
         },
         {
             label: 'Address',
             path: 'address',
             model: 'longText',
-            required: true,
+            required: true
         },
         {
             label: 'Password',
             path: 'password',
             model: 'password',
-            required: true,
+            required: true
+        }
+    ],
+    login: [
+        {
+            label: 'Username',
+            path: 'username',
+            model: 'longText',
+            required: true
+        },
+        {
+            label: 'Password',
+            path: 'password',
+            model: 'password',
+            required: true
         }
     ]
 }
