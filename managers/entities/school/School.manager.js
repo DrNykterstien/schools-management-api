@@ -64,4 +64,10 @@ module.exports = class SchoolManager {
         return {shortToken, longToken, user: result};
     }
 
+    async schoolAdminByIdOrError({schoolAdminId}) {
+        const schoolAdmin = await this.mongomodels.SchoolAdmin.findById(schoolAdminId).select('-__v').lean();
+        if (!schoolAdmin) return {error: 'School Admin does not exist'};
+        return schoolAdmin;
+    }
+
 }
