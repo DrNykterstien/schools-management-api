@@ -1,6 +1,7 @@
 const mongoose   = require('mongoose');
 const { nanoid } = require('nanoid');
-const bcrypt   = require('bcrypt');
+const md5        = require('md5');
+const bcrypt     = require('bcrypt');
 
 module.exports = class SchoolManager { 
 
@@ -41,7 +42,7 @@ module.exports = class SchoolManager {
         }
     }
 
-    async login({username, password}) {
+    async login({__device, username, password}) {
         const data = {username, password};
 
         // Data validation
@@ -55,9 +56,12 @@ module.exports = class SchoolManager {
         const isMatched = await bcrypt.compare(password, schoolAdmin.password);
         if (!isMatched) return {error: 'Incorrect email or password'};
 
-        const token = this.tokenManager.genLongToken({userId: schoolAdmin._id, userKey: schoolAdmin.username})
-        const {password: _, ...result} = schoolAdmin
-        return {token, ...result}
+        const tokenData = {userId: schoolAdmin._id, userKey: schoolAdmin.username, sessionId: nanoid(), deviceId: md5(__device)};
+        const longToken = this.tokenManager.genLongToken(tokenData);
+        const shortToken = this.tokenManager.genShortToken(tokenData);
+        const {password: _, ...result} = schoolAdmin;
+        
+        return {shortToken, longToken, user: result};
     }
 
 }
