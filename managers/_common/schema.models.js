@@ -1,10 +1,18 @@
-const emojis = require('../../public/emojis.data.json');
+const emojis    = require('../../public/emojis.data.json');
+const countries = require('../../public/countries.data.json');
+
+countries.value = countries.value.map((c) => c.code);
 
 module.exports = {
     id: {
         path: "id",
         type: "string",
         length: { min: 1, max: 50 },
+    },
+    name: {
+        path: 'name',
+        type: 'String',
+        length: {min: 3, max:50},
     },
     username: {
         path: 'username',
@@ -55,6 +63,11 @@ module.exports = {
             length: {min: 1, max: 10},
             oneOf: emojis.value,
         }
+    },
+    country: {
+        path: 'country',
+        type: 'string',
+        oneOf: countries.value,
     },
     price: {
         path: 'price',
