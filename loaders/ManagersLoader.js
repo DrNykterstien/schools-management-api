@@ -14,6 +14,8 @@ const TokenManager          = require('../managers/token/Token.manager');
 const SharkFin              = require('../managers/shark_fin/SharkFin.manager');
 const TimeMachine           = require('../managers/time_machine/TimeMachine.manager');
 
+const SchoolManager         = require('../managers/entities/school/School.manager');
+
 /** 
  * load sharable modules
  * @return modules tree with instance of each module
@@ -63,10 +65,13 @@ module.exports = class ManagersLoader {
         const mwsRepo                     = middlewaresLoader.load();
         const { layers, actions }         = systemArch;
         this.injectable.mwsRepo           = mwsRepo;
+        
         /*****************************************CUSTOM MANAGERS*****************************************/
         this.managers.shark               = new SharkFin({ ...this.injectable, layers, actions });
         this.managers.timeMachine         = new TimeMachine(this.injectable);
         this.managers.token               = new TokenManager(this.injectable);
+        this.managers.school              = new SchoolManager(this.injectable);
+
         /*************************************************************************************************/
         this.managers.mwsExec             = new VirtualStack({ ...{ preStack: [/* '__token', */'__device',] }, ...this.injectable });
         this.managers.userApi             = new ApiHandler({...this.injectable,...{prop:'httpExposed'}});
