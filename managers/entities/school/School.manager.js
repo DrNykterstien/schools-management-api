@@ -6,11 +6,12 @@ const bcrypt     = require('bcrypt');
 module.exports = class SchoolManager { 
 
     constructor({utils, validators, mongomodels, managers}={}){
-        this.utils        = utils;
-        this.validators   = validators; 
-        this.mongomodels  = mongomodels;
-        this.tokenManager = managers.token;
-        this.httpExposed  = ['register', 'login', 'get=current', 'get=currentAdmin'];
+        this.utils              = utils;
+        this.validators         = validators; 
+        this.mongomodels        = mongomodels;
+        this.tokenManager       = managers.token;
+        this.responseDispatcher = managers.responseDispatcher;
+        this.httpExposed        = ['register', 'login', 'get=current', 'get=currentAdmin', 'addAdmin'];
     }
 
     async register({name, country, city, address, password}) {
@@ -21,12 +22,12 @@ module.exports = class SchoolManager {
         if(input) return {errors: input};
         
         // Logic
-        let slug, result;
+        let result;
         const session = await mongoose.startSession();
         session.startTransaction()
 
         try {
-            slug = this.utils.slugify(`${name}-${nanoid(6)}`);
+            const slug = this.utils.slugify(`${name}-${nanoid(6)}`);
             const school = await this.mongomodels.School.create([{name, slug, country, city, address}], {session});
             const schoolId = school[0]._id;
             const schoolSuperAdmin = await this.mongomodels.SchoolAdmin.create([{name, username: slug, password, school: schoolId, isSchoolSuperAdmin: true}], {session});
@@ -35,7 +36,7 @@ module.exports = class SchoolManager {
             result = {username: slug}
         } catch(error) {
             await session.abortTransaction();
-            result = {error: error.message || 'Something went wrong'}
+            result = {error: error.message || 'Something went wrong'};
         } finally {
             session.endSession();
             return result
@@ -66,12 +67,42 @@ module.exports = class SchoolManager {
 
     async current({__shortToken, __schoolAdmin}) {
         const school = await this.mongomodels.School.findById(__schoolAdmin.school).select('-__v -updatedAt').lean();
-        return school
+        return school;
     }
 
     async currentAdmin({__shortToken, __schoolAdmin}) {
         const {password, ...schoolAdmin} = __schoolAdmin;
-        return schoolAdmin
+        return schoolAdmin;
+    }
+
+    async addAdmin({__shortToken, __schoolAdmin, name, password, res}) {
+        const data = {name, password};
+
+        // Data validation
+        let input = await this.validators.school.addAdmin(data);
+        if(input) return {errors: input};
+
+        // Logic
+        const {school, isSchoolSuperAdmin} = __schoolAdmin;
+        if (!isSchoolSuperAdmin) this.responseDispatcher.dispatch(res, {ok: false, code:403, errors: 'forbidden'});
+
+        let result;
+        const session = await mongoose.startSession();
+        session.startTransaction()
+
+        try {
+            const slug = this.utils.slugify(`${name}-${nanoid(9)}`);
+            const schoolAdmin = await this.mongomodels.SchoolAdmin.create([{name, username: slug, password, school}], {session});
+            await this.mongomodels.School.findByIdAndUpdate(school, {$push: {admins: schoolAdmin[0]._id}});
+            await session.commitTransaction();
+            result = {username: slug};
+        } catch(error) {
+            await session.abortTransaction();
+            result = {error: error.message || 'Something went wrong'};
+        } finally {
+            session.endSession();
+            return result
+        }
     }
 
     async schoolAdminByIdOrError({schoolAdminId}) {

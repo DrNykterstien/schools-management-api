@@ -44,5 +44,19 @@ module.exports = {
             model: 'password',
             required: true
         }
+    ],
+    addAdmin: [
+        {
+            label: 'Admin Name',
+            path: 'name',
+            model: 'name',
+            required: true
+        },
+        {
+            label: 'Password',
+            path: 'password',
+            model: 'password',
+            required: true
+        }
     ]
 }
