@@ -10,7 +10,7 @@ module.exports = class SchoolManager {
         this.validators   = validators; 
         this.mongomodels  = mongomodels;
         this.tokenManager = managers.token;
-        this.httpExposed  = ['register', 'login', 'get=current'];
+        this.httpExposed  = ['register', 'login', 'get=current', 'get=currentAdmin'];
     }
 
     async register({name, country, city, address, password}) {
@@ -67,6 +67,11 @@ module.exports = class SchoolManager {
     async current({__shortToken, __schoolAdmin}) {
         const school = await this.mongomodels.School.findById(__schoolAdmin.school).select('-__v -updatedAt').lean();
         return school
+    }
+
+    async currentAdmin({__shortToken, __schoolAdmin}) {
+        const {password, ...schoolAdmin} = __schoolAdmin;
+        return schoolAdmin
     }
 
     async schoolAdminByIdOrError({schoolAdminId}) {
