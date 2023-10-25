@@ -58,5 +58,13 @@ module.exports = {
             model: 'password',
             required: true
         }
+    ],
+    deleteAdmin: [
+        {
+            label: 'Admin ID',
+            path: 'schoolAdminId',
+            model: 'mongoId',
+            required: true
+        }
     ]
 }

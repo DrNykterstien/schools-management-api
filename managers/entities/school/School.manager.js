@@ -11,7 +11,7 @@ module.exports = class SchoolManager {
         this.mongomodels        = mongomodels;
         this.tokenManager       = managers.token;
         this.responseDispatcher = managers.responseDispatcher;
-        this.httpExposed        = ['register', 'login', 'get=current', 'get=currentAdmin', 'addAdmin', 'get=admins'];
+        this.httpExposed        = ['register', 'login', 'get=current', 'get=currentAdmin', 'addAdmin', 'get=admins', 'delete=deleteAdmin'];
     }
 
     async register({name, country, city, address, password}) {
@@ -108,6 +108,36 @@ module.exports = class SchoolManager {
     async admins({__shortToken, __schoolAdmin}) {
         const {school} = __schoolAdmin;
         return await this.mongomodels.SchoolAdmin.find({school}).select('-__v -password -updatedAt');
+    }
+
+    async deleteAdmin({__shortToken, __schoolAdmin, schoolAdminId}) {
+        const data = {schoolAdminId};
+
+        // Data validation
+        let input = await this.validators.school.deleteAdmin(data);
+        if(input) return {errors: input};
+        
+        // Logic
+        const {school, isSchoolSuperAdmin} = __schoolAdmin;
+        if (!isSchoolSuperAdmin) this.responseDispatcher.dispatch(res, {ok: false, code:403, errors: 'forbidden'});
+
+        let result;
+        const session = await mongoose.startSession();
+        session.startTransaction()
+
+        try {
+            const {deletedCount} = await this.mongomodels.SchoolAdmin.deleteOne({_id: schoolAdminId, school, isSchoolSuperAdmin: false}, {session});
+            if (deletedCount === 0) throw new Error('School Admin does not exist');
+            await this.mongomodels.School.findByIdAndUpdate(school, {$pull: {admins: schoolAdminId}}, {session});
+            await session.commitTransaction();
+            result = true;
+        } catch(error) {
+            await session.abortTransaction();
+            result = {error: error.message || 'Something went wrong'};
+        } finally {
+            session.endSession();
+            return result;
+        }
     }
 
     async schoolAdminByIdOrError({schoolAdminId}) {
