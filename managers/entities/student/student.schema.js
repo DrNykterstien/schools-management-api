@@ -26,5 +26,19 @@ module.exports = {
             model: 'mongoId',
             required: true
         }
+    ],
+    login: [
+        {
+            label: 'Username',
+            path: 'username',
+            model: 'longText',
+            required: true
+        },
+        {
+            label: 'Password',
+            path: 'password',
+            model: 'password',
+            required: true
+        }
     ]
 }

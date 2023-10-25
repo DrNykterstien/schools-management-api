@@ -1,5 +1,7 @@
 const mongoose   = require('mongoose');
 const { nanoid } = require('nanoid');
+const md5        = require('md5');
+const bcrypt     = require('bcrypt');
 
 module.exports = class ClassroomManager { 
 
@@ -9,7 +11,7 @@ module.exports = class ClassroomManager {
         this.mongomodels        = mongomodels;
         this.tokenManager       = managers.token;
         this.responseDispatcher = managers.responseDispatcher;
-        this.httpExposed        = ['add', 'delete=delete'];
+        this.httpExposed        = ['add', 'delete=delete', 'login'];
     }
 
     async add({__shortToken, __schoolAdmin, name, classroomId, password}) {
@@ -61,7 +63,7 @@ module.exports = class ClassroomManager {
         try {
             const student = await this.mongomodels.Student.findOne({_id: studentId, school});
             if (!student) throw new Error('Student does not exist');
-            const {deletedCount} = await this.mongomodels.Student.deleteOne({_id: studentId, school}, {session});
+            await this.mongomodels.Student.deleteOne({_id: studentId, school}, {session});
             await this.mongomodels.Classroom.findByIdAndUpdate(student.classroom, {$pull: {students: studentId}}, {session});
             await session.commitTransaction();
             result = true;
@@ -74,4 +76,25 @@ module.exports = class ClassroomManager {
         }
     }
 
+    async login({__device, username, password}) {
+        const data = {username, password};
+
+        // Data validation
+        let input = await this.validators.student.login(data);
+        if(input) return {errors: input};
+
+        // Logic
+        const student = await this.mongomodels.Student.findOne({username}).select('-__v -updatedAt').lean();
+        if (!student) return {error: 'Incorrect email or password'};
+        
+        const isMatched = await bcrypt.compare(password, student.password);
+        if (!isMatched) return {error: 'Incorrect email or password'};
+
+        const tokenData = {userId: student._id, userKey: 'User', sessionId: nanoid(), deviceId: md5(__device)};
+        const longToken = this.tokenManager.genLongToken(tokenData);
+        const shortToken = this.tokenManager.genShortToken(tokenData);
+        const {password: _, ...result} = student;
+        
+        return {shortToken, longToken, user: result};
+    }
 }
