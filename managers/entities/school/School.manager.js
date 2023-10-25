@@ -11,7 +11,7 @@ module.exports = class SchoolManager {
         this.mongomodels        = mongomodels;
         this.tokenManager       = managers.token;
         this.responseDispatcher = managers.responseDispatcher;
-        this.httpExposed        = ['register', 'login', 'get=current', 'get=currentAdmin', 'addAdmin'];
+        this.httpExposed        = ['register', 'login', 'get=current', 'get=currentAdmin', 'addAdmin', 'get=admins'];
     }
 
     async register({name, country, city, address, password}) {
@@ -93,7 +93,7 @@ module.exports = class SchoolManager {
         try {
             const slug = this.utils.slugify(`${name}-${nanoid(9)}`);
             const schoolAdmin = await this.mongomodels.SchoolAdmin.create([{name, username: slug, password, school}], {session});
-            await this.mongomodels.School.findByIdAndUpdate(school, {$push: {admins: schoolAdmin[0]._id}});
+            await this.mongomodels.School.findByIdAndUpdate(school, {$push: {admins: schoolAdmin[0]._id}}, {session});
             await session.commitTransaction();
             result = {username: slug};
         } catch(error) {
@@ -103,6 +103,11 @@ module.exports = class SchoolManager {
             session.endSession();
             return result
         }
+    }
+
+    async admins({__shortToken, __schoolAdmin}) {
+        const {school} = __schoolAdmin;
+        return await this.mongomodels.SchoolAdmin.find({school}).select('-__v -password -updatedAt');
     }
 
     async schoolAdminByIdOrError({schoolAdminId}) {
