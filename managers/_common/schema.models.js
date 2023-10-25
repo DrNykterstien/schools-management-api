@@ -9,6 +9,10 @@ module.exports = {
         type: "string",
         length: { min: 1, max: 50 },
     },
+    mongoId: {
+        type: "string",
+        custom: 'mongoId'
+    },
     name: {
         path: 'name',
         type: 'String',
