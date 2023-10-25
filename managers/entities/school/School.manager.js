@@ -11,7 +11,7 @@ module.exports = class SchoolManager {
         this.mongomodels        = mongomodels;
         this.tokenManager       = managers.token;
         this.responseDispatcher = managers.responseDispatcher;
-        this.httpExposed        = ['register', 'login', 'get=current', 'get=currentAdmin', 'addAdmin', 'get=admins', 'get=admin', 'delete=deleteAdmin'];
+        this.httpExposed        = ['register', 'login', 'get=current', 'get=currentAdmin', 'addAdmin', 'get=admins', 'get=admin', 'delete=deleteAdmin', 'patch=updateDetails'];
     }
 
     async register({name, country, city, address, password}) {
@@ -151,6 +151,21 @@ module.exports = class SchoolManager {
             session.endSession();
             return result;
         }
+    }
+
+    async updateDetails({__shortToken, __schoolAdmin, name, country, city, address}) {
+        const data = {name, country, city, address};
+
+        // Data validation
+        let input = await this.validators.school.updateDetails(data);
+        if(input) return {errors: input};
+        this.utils.stripEmptyValues(data);
+
+        // Logic
+        const {school, isSchoolSuperAdmin} = __schoolAdmin;
+        if (!isSchoolSuperAdmin) this.responseDispatcher.dispatch(res, {ok: false, code:403, errors: 'forbidden'});
+
+        return await this.mongomodels.School.findByIdAndUpdate(school, data, {new: true}).select('-__v');
     }
 
     async schoolAdminByIdOrError({schoolAdminId}) {

@@ -74,5 +74,27 @@ module.exports = {
             model: 'mongoId',
             required: true
         }
+    ],
+    updateDetails: [
+        {
+            label: 'School Name',
+            path: 'name',
+            model: 'name'
+        },
+        {
+            label: 'Country',
+            path: 'country',
+            model: 'country'
+        },
+        {
+            label: 'City',
+            path: 'city',
+            model: 'text'
+        },
+        {
+            label: 'Address',
+            path: 'address',
+            model: 'longText'
+        }
     ]
 }
