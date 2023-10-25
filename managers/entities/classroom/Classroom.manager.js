@@ -7,7 +7,7 @@ module.exports = class StudentManager {
         this.mongomodels        = mongomodels;
         this.tokenManager       = managers.token;
         this.responseDispatcher = managers.responseDispatcher;
-        this.httpExposed        = ['add', 'get=classmates'];
+        this.httpExposed        = ['add', 'get=classmates', 'get=classrooms'];
     }
 
     async add({__shortToken, __schoolAdmin, name, code}) {
@@ -27,5 +27,10 @@ module.exports = class StudentManager {
     async classmates({__shortToken, __student}) {
         const {_id: currentStudentId, classroom} = __student;
         return await this.mongomodels.Student.find({classroom, _id: {$ne: currentStudentId}}).select('-__v -password -updatedAt');
+    }
+
+    async classrooms({__shortToken, __currentUser}) {
+        const {school} = __currentUser
+        return await this.mongomodels.Classroom.find({school}).select('-__v -updatedAt');
     }
 }
