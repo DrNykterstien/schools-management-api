@@ -11,7 +11,7 @@ module.exports = class SchoolManager {
         this.mongomodels        = mongomodels;
         this.tokenManager       = managers.token;
         this.responseDispatcher = managers.responseDispatcher;
-        this.httpExposed        = ['register', 'login', 'get=current', 'get=currentAdmin', 'addAdmin', 'get=admins', 'delete=deleteAdmin'];
+        this.httpExposed        = ['register', 'login', 'get=current', 'get=currentAdmin', 'addAdmin', 'get=admins', 'get=admin', 'delete=deleteAdmin'];
     }
 
     async register({name, country, city, address, password}) {
@@ -103,6 +103,19 @@ module.exports = class SchoolManager {
             session.endSession();
             return result
         }
+    }
+
+    async admin({__shortToken, __schoolAdmin, __query}) {
+        // Data validation
+        let input = await this.validators.school.admin(__query);
+        if(input) return {errors: input};
+
+        // Logic
+        const {schoolAdminId} = __query
+        const {school} = __schoolAdmin;
+        const schoolAdmin = await this.mongomodels.SchoolAdmin.findOne({_id: schoolAdminId, school}).select('-__v -password -updatedAt');
+        if(!schoolAdmin) return {error: 'School Admin does not exist'};
+        return schoolAdmin
     }
 
     async admins({__shortToken, __schoolAdmin}) {

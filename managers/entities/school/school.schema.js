@@ -66,5 +66,13 @@ module.exports = {
             model: 'mongoId',
             required: true
         }
+    ],
+    admin: [
+        {
+            label: 'Admin ID',
+            path: 'schoolAdminId',
+            model: 'mongoId',
+            required: true
+        }
     ]
 }
