@@ -9,7 +9,7 @@ module.exports = class ClassroomManager {
         this.mongomodels        = mongomodels;
         this.tokenManager       = managers.token;
         this.responseDispatcher = managers.responseDispatcher;
-        this.httpExposed        = ['add'];
+        this.httpExposed        = ['add', 'delete=delete'];
     }
 
     async add({__shortToken, __schoolAdmin, name, classroomId, password}) {
@@ -41,6 +41,36 @@ module.exports = class ClassroomManager {
         } finally {
             session.endSession();
             return result
+        }
+    }
+
+    async delete({__shortToken, __schoolAdmin, studentId}) {
+        const data = {studentId};
+
+        // Data validation
+        let input = await this.validators.student.delete(data);
+        if(input) return {errors: input};
+        
+        // Logic
+        const {school} = __schoolAdmin;
+
+        let result;
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            const student = await this.mongomodels.Student.findOne({_id: studentId, school});
+            if (!student) throw new Error('Student does not exist');
+            const {deletedCount} = await this.mongomodels.Student.deleteOne({_id: studentId, school}, {session});
+            await this.mongomodels.Classroom.findByIdAndUpdate(student.classroom, {$pull: {students: studentId}}, {session});
+            await session.commitTransaction();
+            result = true;
+        } catch(error) {
+            await session.abortTransaction();
+            result = {error: error.message || 'Something went wrong'};
+        } finally {
+            session.endSession();
+            return result;
         }
     }
 

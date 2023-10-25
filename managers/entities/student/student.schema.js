@@ -18,5 +18,13 @@ module.exports = {
             model: 'mongoId',
             required: true
         }
+    ],
+    delete: [
+        {
+            label: 'Student ID',
+            path: 'studentId',
+            model: 'mongoId',
+            required: true
+        }
     ]
 }
