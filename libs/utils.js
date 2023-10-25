@@ -134,6 +134,14 @@ const isChance = (max)=>{
     return min == value; 
 }
 
+const stripEmptyValues = (obj) => {
+    Object.keys(obj).forEach(key => {
+    if (obj[key] == null) {
+        delete obj[key];
+    }
+    });
+}
+
 module.exports = {
   slugify,
   getDeepValue,
@@ -147,5 +155,6 @@ module.exports = {
   hrTime,
   match,
   isChance,
+  stripEmptyValues,
 
 }
