@@ -27,6 +27,8 @@ const classroomSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+classroomSchema.index({school:1, code:1}, {unique: true})
+
 const Classroom = mongoose.model('Classroom', classroomSchema);
 
 module.exports = Classroom;
