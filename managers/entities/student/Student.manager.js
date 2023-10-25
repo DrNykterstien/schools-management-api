@@ -97,4 +97,10 @@ module.exports = class ClassroomManager {
         
         return {shortToken, longToken, user: result};
     }
+
+    async studentByIdOrError({studentId}) {
+        const student = await this.mongomodels.Student.findById(studentId).select('-__v').lean();
+        if (!student) return {error: 'Student does not exist'};
+        return student;
+    }
 }
