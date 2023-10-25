@@ -90,7 +90,7 @@ module.exports = class ClassroomManager {
         const isMatched = await bcrypt.compare(password, student.password);
         if (!isMatched) return {error: 'Incorrect email or password'};
 
-        const tokenData = {userId: student._id, userKey: 'User', sessionId: nanoid(), deviceId: md5(__device)};
+        const tokenData = {userId: student._id, userKey: 'Student', sessionId: nanoid(), deviceId: md5(__device)};
         const longToken = this.tokenManager.genLongToken(tokenData);
         const shortToken = this.tokenManager.genShortToken(tokenData);
         const {password: _, ...result} = student;
