@@ -1,5 +1,5 @@
 
-module.exports = class ClassroomManager { 
+module.exports = class StudentManager { 
 
     constructor({utils, validators, mongomodels, managers}={}){
         this.utils              = utils;
